@@ -23,14 +23,27 @@ def analyze_pca_components(data_path="data/kaggle_diabetes_data.csv", target_col
     feature_names = X.columns.tolist()
     n_components = pca.n_components_
 
-    print(f"Number of features: {len(feature_names)}")
-    print(f"Number of components: {n_components}")
-    print(f"Explained variance ratio: {pca.explained_variance_ratio_}")
+    print(f"Analyzing {n_components} components for {len(feature_names)} features...")
 
-    # Log all components to file
+    # Calculate average and total loadings per feature
+    absolute_loadings = np.abs(pca.components_)
+    mean_loadings = np.mean(absolute_loadings, axis=0)
+    total_loadings = np.sum(absolute_loadings, axis=0)
+
+    # Create feature importance summary
+    feature_importance = []
+    for i, feature in enumerate(feature_names):
+        feature_importance.append({
+            'feature': feature,
+            'mean_loading': mean_loadings[i],
+            'total_loading': total_loadings[i]
+        })
+
+    # Sort by mean loading (descending)
+    feature_importance.sort(key=lambda x: x['mean_loading'], reverse=True)
+
+    # Setup output file
     os.makedirs("results/pca", exist_ok=True)
-
-    # Extract dataset name from path for filename
     dataset_name = os.path.splitext(os.path.basename(data_path))[0]
     output_file = f"results/pca/{dataset_name}_components.txt"
 
@@ -39,6 +52,7 @@ def analyze_pca_components(data_path="data/kaggle_diabetes_data.csv", target_col
         print(f"File {output_file} already exists. Use overwrite=True to replace.")
         return pca, pca_result, X, y
 
+    # Log component analysis to file
     with open(output_file, "w") as f:
         f.write("PCA Component Analysis\n")
         f.write("=" * 50 + "\n\n")
@@ -47,6 +61,21 @@ def analyze_pca_components(data_path="data/kaggle_diabetes_data.csv", target_col
         f.write(f"Number of Features: {len(feature_names)}\n")
         f.write(f"Number of Components: {n_components}\n")
         f.write(f"Total Samples: {len(X)}\n\n")
+
+        # Feature importance summary
+        f.write("FEATURE IMPORTANCE SUMMARY\n")
+        f.write("=" * 50 + "\n\n")
+        f.write(f"{'Feature':<25}{'Mean Loading':>15}{'Total Loading':>15}\n")
+        f.write("-" * 55 + "\n")
+
+        for item in feature_importance:
+            f.write(f"{item['feature']:<25}{item['mean_loading']:>15.4f}{item['total_loading']:>15.4f}\n")
+
+        f.write("\n\n")
+
+        # Individual component details
+        f.write("INDIVIDUAL COMPONENT LOADINGS\n")
+        f.write("=" * 50 + "\n\n")
 
         for i in range(n_components):
             f.write(f"PC{i + 1} (Explained Variance: {pca.explained_variance_ratio_[i]:.4f})\n")
@@ -64,7 +93,7 @@ def analyze_pca_components(data_path="data/kaggle_diabetes_data.csv", target_col
 
             f.write("\n")
 
-    print(f"Component analysis logged to {output_file}")
+    print(f"Component analysis completed and logged to {output_file}")
 
     return pca, pca_result, X, y
 

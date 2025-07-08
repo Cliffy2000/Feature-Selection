@@ -7,6 +7,37 @@ Number of Features: 21
 Number of Components: 21
 Total Samples: 70692
 
+FEATURE IMPORTANCE SUMMARY
+==================================================
+
+Feature                     Mean Loading  Total Loading
+-------------------------------------------------------
+DiffWalk                          0.1579         3.3149
+PhysHlth                          0.1565         3.2866
+Income                            0.1459         3.0638
+MentHlth                          0.1446         3.0367
+NoDocbcCost                       0.1430         3.0027
+Fruits                            0.1362         2.8601
+HighBP                            0.1325         2.7831
+Age                               0.1314         2.7584
+GenHlth                           0.1252         2.6297
+AnyHealthcare                     0.1235         2.5939
+HighChol                          0.1217         2.5563
+PhysActivity                      0.1197         2.5136
+HeartDiseaseorAttack              0.1170         2.4568
+Smoker                            0.1143         2.4012
+Sex                               0.1087         2.2836
+Veggies                           0.1028         2.1581
+Education                         0.0973         2.0441
+Stroke                            0.0968         2.0327
+HvyAlcoholConsump                 0.0938         1.9692
+CholCheck                         0.0846         1.7773
+BMI                               0.0625         1.3127
+
+
+INDIVIDUAL COMPONENT LOADINGS
+==================================================
+
 PC1 (Explained Variance: 0.1876)
 ----------------------------------------
   HighBP                   :   0.4561
@@ -33,51 +64,51 @@ PC1 (Explained Variance: 0.1876)
 
 PC2 (Explained Variance: 0.1130)
 ----------------------------------------
-  Sex                      :  -0.7464
-  Fruits                   :   0.4177
-  Smoker                   :  -0.3864
-  DiffWalk                 :   0.2145
-  Veggies                  :   0.1591
-  PhysHlth                 :   0.1177
-  Income                   :  -0.1015
-  PhysActivity             :  -0.0966
-  MentHlth                 :   0.0712
-  GenHlth                  :   0.0488
-  NoDocbcCost              :   0.0439
-  HighBP                   :   0.0372
-  HeartDiseaseorAttack     :  -0.0347
-  HvyAlcoholConsump        :  -0.0287
-  Age                      :   0.0237
-  Stroke                   :   0.0193
-  HighChol                 :   0.0158
-  Education                :  -0.0098
-  CholCheck                :   0.0092
-  BMI                      :   0.0071
-  AnyHealthcare            :   0.0050
+  Sex                      :   0.7464
+  Fruits                   :  -0.4177
+  Smoker                   :   0.3864
+  DiffWalk                 :  -0.2145
+  Veggies                  :  -0.1591
+  PhysHlth                 :  -0.1177
+  Income                   :   0.1015
+  PhysActivity             :   0.0966
+  MentHlth                 :  -0.0712
+  GenHlth                  :  -0.0488
+  NoDocbcCost              :  -0.0439
+  HighBP                   :  -0.0372
+  HeartDiseaseorAttack     :   0.0347
+  HvyAlcoholConsump        :   0.0287
+  Age                      :  -0.0237
+  Stroke                   :  -0.0193
+  HighChol                 :  -0.0158
+  Education                :   0.0098
+  CholCheck                :  -0.0092
+  BMI                      :  -0.0071
+  AnyHealthcare            :  -0.0050
 
 PC3 (Explained Variance: 0.1049)
 ----------------------------------------
-  Fruits                   :  -0.5336
-  HighChol                 :  -0.4476
-  HighBP                   :  -0.3793
-  PhysActivity             :  -0.3670
-  Veggies                  :  -0.2940
-  Sex                      :  -0.2453
-  DiffWalk                 :   0.1528
-  PhysHlth                 :   0.1091
-  Age                      :  -0.1071
-  Income                   :  -0.1042
-  HeartDiseaseorAttack     :  -0.0995
-  MentHlth                 :   0.0960
-  NoDocbcCost              :   0.0813
-  Education                :  -0.0498
-  AnyHealthcare            :  -0.0403
-  GenHlth                  :   0.0372
-  CholCheck                :  -0.0272
-  Stroke                   :  -0.0101
-  Smoker                   :  -0.0086
-  HvyAlcoholConsump        :   0.0070
-  BMI                      :   0.0039
+  Fruits                   :   0.5336
+  HighChol                 :   0.4476
+  HighBP                   :   0.3793
+  PhysActivity             :   0.3670
+  Veggies                  :   0.2940
+  Sex                      :   0.2453
+  DiffWalk                 :  -0.1528
+  PhysHlth                 :  -0.1091
+  Age                      :   0.1071
+  Income                   :   0.1042
+  HeartDiseaseorAttack     :   0.0995
+  MentHlth                 :  -0.0960
+  NoDocbcCost              :  -0.0813
+  Education                :   0.0498
+  AnyHealthcare            :   0.0403
+  GenHlth                  :  -0.0372
+  CholCheck                :   0.0272
+  Stroke                   :   0.0101
+  Smoker                   :   0.0086
+  HvyAlcoholConsump        :  -0.0070
+  BMI                      :  -0.0039
 
 PC4 (Explained Variance: 0.0913)
 ----------------------------------------
@@ -129,27 +160,27 @@ PC5 (Explained Variance: 0.0770)
 
 PC6 (Explained Variance: 0.0646)
 ----------------------------------------
-  HighBP                   :  -0.7088
-  HighChol                 :   0.5825
-  PhysActivity             :  -0.2249
-  Sex                      :   0.1965
-  Smoker                   :  -0.1268
-  Fruits                   :   0.1171
-  PhysHlth                 :   0.1103
-  DiffWalk                 :   0.0943
-  MentHlth                 :   0.0707
-  Age                      :  -0.0627
-  Veggies                  :   0.0602
-  NoDocbcCost              :   0.0445
-  Income                   :   0.0387
-  HeartDiseaseorAttack     :   0.0334
-  GenHlth                  :   0.0187
-  Education                :   0.0181
-  AnyHealthcare            :  -0.0127
-  HvyAlcoholConsump        :  -0.0109
-  CholCheck                :  -0.0095
-  BMI                      :  -0.0073
-  Stroke                   :   0.0059
+  HighBP                   :   0.7088
+  HighChol                 :  -0.5825
+  PhysActivity             :   0.2249
+  Sex                      :  -0.1965
+  Smoker                   :   0.1268
+  Fruits                   :  -0.1171
+  PhysHlth                 :  -0.1103
+  DiffWalk                 :  -0.0943
+  MentHlth                 :  -0.0707
+  Age                      :   0.0627
+  Veggies                  :  -0.0602
+  NoDocbcCost              :  -0.0445
+  Income                   :  -0.0387
+  HeartDiseaseorAttack     :  -0.0334
+  GenHlth                  :  -0.0187
+  Education                :  -0.0181
+  AnyHealthcare            :   0.0127
+  HvyAlcoholConsump        :   0.0109
+  CholCheck                :   0.0095
+  BMI                      :   0.0073
+  Stroke                   :  -0.0059
 
 PC7 (Explained Variance: 0.0614)
 ----------------------------------------
@@ -177,27 +208,27 @@ PC7 (Explained Variance: 0.0614)
 
 PC8 (Explained Variance: 0.0549)
 ----------------------------------------
-  Veggies                  :  -0.8853
-  Fruits                   :   0.3792
-  PhysActivity             :   0.2165
-  Income                   :  -0.0954
-  HighBP                   :  -0.0748
-  Smoker                   :   0.0517
-  Education                :  -0.0454
-  HighChol                 :   0.0429
-  Sex                      :  -0.0290
-  DiffWalk                 :  -0.0272
-  Stroke                   :   0.0252
-  HvyAlcoholConsump        :  -0.0229
-  NoDocbcCost              :   0.0215
-  PhysHlth                 :  -0.0214
-  AnyHealthcare            :  -0.0180
-  Age                      :   0.0123
-  BMI                      :  -0.0091
-  HeartDiseaseorAttack     :   0.0087
-  CholCheck                :  -0.0010
-  MentHlth                 :   0.0010
-  GenHlth                  :   0.0006
+  Veggies                  :   0.8853
+  Fruits                   :  -0.3792
+  PhysActivity             :  -0.2165
+  Income                   :   0.0954
+  HighBP                   :   0.0748
+  Smoker                   :  -0.0517
+  Education                :   0.0454
+  HighChol                 :  -0.0429
+  Sex                      :   0.0290
+  DiffWalk                 :   0.0272
+  Stroke                   :  -0.0252
+  HvyAlcoholConsump        :   0.0229
+  NoDocbcCost              :  -0.0215
+  PhysHlth                 :   0.0214
+  AnyHealthcare            :   0.0180
+  Age                      :  -0.0123
+  BMI                      :   0.0091
+  HeartDiseaseorAttack     :  -0.0087
+  CholCheck                :   0.0010
+  MentHlth                 :  -0.0010
+  GenHlth                  :  -0.0006
 
 PC9 (Explained Variance: 0.0423)
 ----------------------------------------
@@ -249,27 +280,27 @@ PC10 (Explained Variance: 0.0376)
 
 PC11 (Explained Variance: 0.0296)
 ----------------------------------------
-  PhysHlth                 :  -0.6000
-  NoDocbcCost              :   0.4776
-  MentHlth                 :  -0.3812
-  DiffWalk                 :   0.3792
-  Income                   :  -0.2230
-  AnyHealthcare            :  -0.1991
-  GenHlth                  :  -0.1257
-  Education                :  -0.0920
-  Veggies                  :   0.0492
-  CholCheck                :  -0.0396
-  Age                      :   0.0382
-  Sex                      :   0.0366
-  HighBP                   :  -0.0301
-  HighChol                 :   0.0274
-  Stroke                   :  -0.0180
-  HvyAlcoholConsump        :  -0.0157
-  PhysActivity             :  -0.0058
-  Smoker                   :   0.0058
-  BMI                      :   0.0058
-  HeartDiseaseorAttack     :   0.0038
-  Fruits                   :   0.0009
+  PhysHlth                 :   0.6000
+  NoDocbcCost              :  -0.4776
+  MentHlth                 :   0.3812
+  DiffWalk                 :  -0.3792
+  Income                   :   0.2230
+  AnyHealthcare            :   0.1991
+  GenHlth                  :   0.1257
+  Education                :   0.0920
+  Veggies                  :  -0.0492
+  CholCheck                :   0.0396
+  Age                      :  -0.0382
+  Sex                      :  -0.0366
+  HighBP                   :   0.0301
+  HighChol                 :  -0.0274
+  Stroke                   :   0.0180
+  HvyAlcoholConsump        :   0.0157
+  PhysActivity             :   0.0058
+  Smoker                   :  -0.0058
+  BMI                      :  -0.0058
+  HeartDiseaseorAttack     :  -0.0038
+  Fruits                   :  -0.0009
 
 PC12 (Explained Variance: 0.0235)
 ----------------------------------------
@@ -417,75 +448,75 @@ PC17 (Explained Variance: 0.0127)
 
 PC18 (Explained Variance: 0.0097)
 ----------------------------------------
-  GenHlth                  :  -0.8219
-  CholCheck                :  -0.3678
-  Income                   :  -0.2499
-  PhysHlth                 :   0.2486
-  Education                :   0.2092
-  HighBP                   :   0.0637
-  AnyHealthcare            :   0.0588
-  HvyAlcoholConsump        :  -0.0570
-  BMI                      :  -0.0514
-  HeartDiseaseorAttack     :   0.0468
-  DiffWalk                 :   0.0387
-  HighChol                 :   0.0333
-  Age                      :  -0.0315
-  PhysActivity             :  -0.0294
-  MentHlth                 :   0.0203
-  Sex                      :   0.0186
-  Smoker                   :   0.0127
-  Fruits                   :  -0.0105
-  Stroke                   :   0.0099
-  Veggies                  :  -0.0053
-  NoDocbcCost              :   0.0013
+  GenHlth                  :   0.8219
+  CholCheck                :   0.3678
+  Income                   :   0.2499
+  PhysHlth                 :  -0.2486
+  Education                :  -0.2092
+  HighBP                   :  -0.0637
+  AnyHealthcare            :  -0.0588
+  HvyAlcoholConsump        :   0.0570
+  BMI                      :   0.0514
+  HeartDiseaseorAttack     :  -0.0468
+  DiffWalk                 :  -0.0387
+  HighChol                 :  -0.0333
+  Age                      :   0.0315
+  PhysActivity             :   0.0294
+  MentHlth                 :  -0.0203
+  Sex                      :  -0.0186
+  Smoker                   :  -0.0127
+  Fruits                   :   0.0105
+  Stroke                   :  -0.0099
+  Veggies                  :   0.0053
+  NoDocbcCost              :  -0.0013
 
 PC19 (Explained Variance: 0.0089)
 ----------------------------------------
-  CholCheck                :  -0.9158
-  GenHlth                  :   0.3527
-  AnyHealthcare            :   0.1205
-  PhysHlth                 :  -0.0902
-  Income                   :   0.0868
-  Age                      :   0.0661
-  Education                :  -0.0240
-  HeartDiseaseorAttack     :  -0.0183
-  DiffWalk                 :  -0.0161
-  MentHlth                 :  -0.0155
-  NoDocbcCost              :  -0.0151
-  PhysActivity             :   0.0144
-  Sex                      :  -0.0104
-  Smoker                   :  -0.0095
-  Stroke                   :  -0.0091
-  HvyAlcoholConsump        :  -0.0074
-  Fruits                   :   0.0066
-  BMI                      :   0.0060
-  HighBP                   :  -0.0050
-  HighChol                 :   0.0018
-  Veggies                  :   0.0002
+  CholCheck                :   0.9158
+  GenHlth                  :  -0.3527
+  AnyHealthcare            :  -0.1205
+  PhysHlth                 :   0.0902
+  Income                   :  -0.0868
+  Age                      :  -0.0661
+  Education                :   0.0240
+  HeartDiseaseorAttack     :   0.0183
+  DiffWalk                 :   0.0161
+  MentHlth                 :   0.0155
+  NoDocbcCost              :   0.0151
+  PhysActivity             :  -0.0144
+  Sex                      :   0.0104
+  Smoker                   :   0.0095
+  Stroke                   :   0.0091
+  HvyAlcoholConsump        :   0.0074
+  Fruits                   :  -0.0066
+  BMI                      :  -0.0060
+  HighBP                   :   0.0050
+  HighChol                 :  -0.0018
+  Veggies                  :  -0.0002
 
 PC20 (Explained Variance: 0.0077)
 ----------------------------------------
-  Education                :  -0.9035
-  Income                   :   0.3085
-  GenHlth                  :  -0.2660
-  PhysHlth                 :   0.0791
-  AnyHealthcare            :   0.0561
-  CholCheck                :  -0.0534
-  MentHlth                 :   0.0321
-  Age                      :  -0.0279
-  NoDocbcCost              :   0.0266
-  DiffWalk                 :   0.0253
-  Stroke                   :   0.0206
-  Smoker                   :  -0.0204
-  HeartDiseaseorAttack     :   0.0195
-  PhysActivity             :   0.0172
-  Veggies                  :   0.0154
-  HighBP                   :   0.0150
-  HvyAlcoholConsump        :  -0.0103
-  BMI                      :  -0.0091
-  Sex                      :  -0.0086
-  HighChol                 :   0.0074
-  Fruits                   :   0.0058
+  Education                :   0.9035
+  Income                   :  -0.3085
+  GenHlth                  :   0.2660
+  PhysHlth                 :  -0.0791
+  AnyHealthcare            :  -0.0561
+  CholCheck                :   0.0534
+  MentHlth                 :  -0.0321
+  Age                      :   0.0279
+  NoDocbcCost              :  -0.0266
+  DiffWalk                 :  -0.0253
+  Stroke                   :  -0.0206
+  Smoker                   :   0.0204
+  HeartDiseaseorAttack     :  -0.0195
+  PhysActivity             :  -0.0172
+  Veggies                  :  -0.0154
+  HighBP                   :  -0.0150
+  HvyAlcoholConsump        :   0.0103
+  BMI                      :   0.0091
+  Sex                      :   0.0086
+  HighChol                 :  -0.0074
+  Fruits                   :  -0.0058
 
 PC21 (Explained Variance: 0.0017)
 ----------------------------------------
