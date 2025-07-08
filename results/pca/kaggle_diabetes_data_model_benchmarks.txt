@@ -1,0 +1,118 @@
+PCA Model Benchmarks
+==================================================
+
+Dataset: data/kaggle_diabetes_data.csv
+Target Column: Diabetes_binary
+Total Samples: 70692
+Test Split: 30%
+
+PCA Benchmarks: 1 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7060      0.7756      0.7013      0.6359      0.0239
+Decision Tree             0.7040      0.7668      0.7244      0.5387      0.0628
+Random Forest             0.6128      0.6830      0.6132      0.2950      8.6173
+Gradient Boosting         0.7074      0.7753      0.7284      0.6385      2.0000
+Gaussian NB               0.7051      0.7756      0.6957      0.6353      0.0150
+LDA                       0.7056      0.7756      0.6986      0.6359      0.0180
+
+PCA Benchmarks: 2 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7002      0.7700      0.6965      0.6337      0.0230
+Decision Tree             0.7002      0.7622      0.7158      0.5172      0.0955
+Random Forest             0.6754      0.7369      0.6825      0.5692      6.5143
+Gradient Boosting         0.7036      0.7746      0.7208      0.6387      3.2985
+Gaussian NB               0.6999      0.7697      0.6914      0.6328      0.0195
+LDA                       0.6999      0.7700      0.6935      0.6336      0.0200
+
+PCA Benchmarks: 3 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7090      0.7831      0.7075      0.6394      0.0215
+Decision Tree             0.7154      0.7752      0.7244      0.5057      0.1365
+Random Forest             0.6983      0.7665      0.7044      0.6024      6.1365
+Gradient Boosting         0.7139      0.7871      0.7206      0.6434      4.6559
+Gaussian NB               0.7083      0.7824      0.7063      0.6387      0.0200
+LDA                       0.7090      0.7828      0.7064      0.6393      0.0210
+
+PCA Benchmarks: 5 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7109      0.7828      0.7140      0.6396      0.0220
+Decision Tree             0.7127      0.7691      0.7235      0.5088      0.2071
+Random Forest             0.7043      0.7703      0.7156      0.6007     10.0621
+Gradient Boosting         0.7193      0.7879      0.7341      0.6441      7.4381
+Gaussian NB               0.7088      0.7813      0.7114      0.6385      0.0211
+LDA                       0.7106      0.7827      0.7121      0.6393      0.0258
+
+PCA Benchmarks: 10 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7155      0.7856      0.7186      0.6403      0.0241
+Decision Tree             0.7109      0.7649      0.7192      0.4962      0.4001
+Random Forest             0.7016      0.7701      0.7104      0.6087     14.9076
+Gradient Boosting         0.7234      0.7917      0.7359      0.6456     14.5061
+Gaussian NB               0.6953      0.7643      0.6822      0.6120      0.0280
+LDA                       0.7152      0.7850      0.7180      0.6398      0.0300
+
+PCA Benchmarks: 15 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7214      0.7928      0.7256      0.6443      0.0276
+Decision Tree             0.7072      0.7618      0.7278      0.4652      0.5919
+Random Forest             0.7079      0.7717      0.7172      0.6121     14.5141
+Gradient Boosting         0.7312      0.7990      0.7444      0.6496     21.5615
+Gaussian NB               0.6794      0.7536      0.6565      0.5534      0.0331
+LDA                       0.7207      0.7922      0.7256      0.6440      0.0378
+
+PCA Benchmarks: 16 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7203      0.7942      0.7250      0.6452      0.0289
+Decision Tree             0.7098      0.7650      0.7301      0.4895      0.6242
+Random Forest             0.7116      0.7759      0.7235      0.6149     19.1592
+Gradient Boosting         0.7294      0.7998      0.7432      0.6497     22.9460
+Gaussian NB               0.6853      0.7543      0.6675      0.5500      0.0320
+LDA                       0.7207      0.7934      0.7259      0.6448      0.0395
+
+PCA Benchmarks: 18 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7386      0.8129      0.7422      0.6549      0.0359
+Decision Tree             0.7162      0.7707      0.7285      0.4755      0.7102
+Random Forest             0.7212      0.7862      0.7316      0.6221     18.9027
+Gradient Boosting         0.7401      0.8134      0.7510      0.6568     25.9255
+Gaussian NB               0.6969      0.7635      0.6806      0.5506      0.0365
+LDA                       0.7393      0.8124      0.7446      0.6545      0.0440
+
+PCA Benchmarks: 20 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7343      0.8102      0.7400      0.6541      0.0380
+Decision Tree             0.7185      0.7722      0.7392      0.4869      0.7855
+Random Forest             0.7252      0.7880      0.7371      0.6231     19.9996
+Gradient Boosting         0.7398      0.8111      0.7529      0.6560     28.5861
+Gaussian NB               0.7059      0.7618      0.7112      0.5200      0.0420
+LDA                       0.7339      0.8097      0.7413      0.6536      0.0554
+
+PCA Benchmarks: 21 Components
+----------------------------------------
+Method                  Accuracy         AUC          F1LogLossScore   Runtime_s
+--------------------------------------------------------------------------------
+Logistic Regression       0.7472      0.8247      0.7516      0.6612      0.0694
+Decision Tree             0.7328      0.8016      0.7413      0.5182      0.0926
+Random Forest             0.7352      0.8100      0.7441      0.6373      3.2610
+Gradient Boosting         0.7522      0.8306      0.7612      0.6656      2.7541
+Gaussian NB               0.7203      0.7862      0.7174      0.4224      0.0380
+LDA                       0.7476      0.8236      0.7541      0.6606      0.0496
+
