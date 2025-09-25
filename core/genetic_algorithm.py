@@ -102,10 +102,10 @@ class NumericFeaturesGA:
 
 
 
-class ProbabilisticEncodingGA:
-
+class ValueEncodingGA:
+    pass
 
 
 class SetEncodingGA:
-    
+    pass
 
