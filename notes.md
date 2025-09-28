@@ -1,11 +1,8 @@
 # Notes
 
-## Training Tasks
-```
-- Random values   &   fixed threshold  
-- Fixed values    &   random threshold  
-- Random values   &   random threshold
-```
+## Designs
+### Threshold encoding / decoding
+
 
 ## Dataset
 Diabetes dataset with artificial noise features
