@@ -47,15 +47,21 @@ class BaseGA:
 
         return population
 
-    def select(self):
+    def select_roulette(self):
         """
         Roulette wheel selection
         :return: parent1, parent2
         """
         fitness_values = np.array([indv['fitness'] for indv in self.population])
         probabilities = fitness_values / np.sum(fitness_values)
-        selected_indices = np.random.choice(len(self.population), size=2, p=probabilities)
-        return self.population[selected_indices[0]], self.population[selected_indices[1]]
+        selected_indices = np.random.choice(len(self.population), size=1, p=probabilities)
+        return self.population[selected_indices[0]]
+
+    def select_tourn(self):
+        tournament_size = 3
+        tournament = np.random.choice(self.population, tournament_size, replace=False)
+        winner = max(tournament, key=lambda x: x['fitness'])
+        return winner
 
     def crossover(self, parent1, parent2):
         """
@@ -173,24 +179,30 @@ class BaseGA:
         print("Initial population completed.")
 
         for generation in range(self.generations):
-            new_population = self.population[:self.elitism_count].copy()
+            new_population = []
 
-            offspring = []
-            while len(new_population) + len(offspring) < self.population_size:
-                parent1, parent2 = self.select()
+            # Keep elites but they'll be re-evaluated
+            elite_chromosomes = [self.population[i]['chromosome'].copy() for i in range(self.elitism_count)]
+
+            for chromosome in elite_chromosomes:
+                new_population.append({'chromosome': chromosome, 'fitness': 0})
+
+            while len(new_population) < self.population_size:
+                parent1 = self.select_tourn()
+                parent2 = self.select_tourn()
                 child1, child2 = self.crossover(parent1, parent2)
                 child1 = self.mutate(child1)
                 child2 = self.mutate(child2)
-                offspring.extend([child1, child2])
+                new_population.extend([child1, child2])
 
-            if self.gpu:
-                self.evaluate_knn_pytorch(offspring)
-            else:
-                for indv in offspring:
-                    indv['fitness'] = self.fitness_knn(indv['chromosome'])
-
-            new_population.extend(offspring)
             new_population = new_population[:self.population_size]
+
+            # Evaluate ENTIRE population with fresh samples
+            if self.gpu and torch.cuda.is_available():
+                self.evaluate_knn_pytorch(new_population)
+            else:
+                for indv in new_population:
+                    indv['fitness'] = self.fitness_knn(indv['chromosome'])
 
             new_population.sort(key=lambda x: x['fitness'], reverse=True)
             self.population = new_population
