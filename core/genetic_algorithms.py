@@ -218,52 +218,49 @@ class BaseGA:
         return np.mean(scores)
 
     def evaluate_batch_gpu(self, batch):
-        # Move data to GPU once
         X_gpu = cp.asarray(self.X, dtype=cp.float32)
         y_gpu = cp.asarray(self.y, dtype=cp.int32)
 
-        # Prepare all chromosomes
-        all_decoded = [self.decode(indv['chromosome']) for indv in batch]
+        # Generate random samples once per generation
+        scores_all = []
+        for trial in range(3):
+            idx = cp.random.choice(len(X_gpu), 5000, replace=True)
+            X_sampled = X_gpu[idx]
+            y_sampled = y_gpu[idx]
 
-        # Create GPU streams for parallel execution
-        streams = [cp.cuda.Stream() for _ in batch]
-        fitness_scores = []
+            # Split once for all individuals
+            X_sample_cpu = cp.asnumpy(X_sampled)
+            y_sample_cpu = cp.asnumpy(y_sampled)
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_sample_cpu, y_sample_cpu, test_size=0.3, random_state=None
+            )
 
-        for decoded, stream in zip(all_decoded, streams):
-            with stream:
-                decoded_gpu = cp.asarray(decoded, dtype=cp.float32)
+            # Now evaluate ALL individuals on the same train/test split
+            trial_scores = []
+            for indv in batch:
+                decoded = self.decode(indv['chromosome'])
 
                 if decoded.dtype == bool:
-                    X_transformed = X_gpu[:, decoded_gpu[:-1].astype(cp.bool_)]
-                    if X_transformed.shape[1] == 0:
-                        fitness_scores.append(0.0)
+                    mask = decoded[:-1]
+                    if mask.sum() == 0:
+                        trial_scores.append(0.0)
                         continue
+                    X_train_transformed = X_train[:, mask]
+                    X_test_transformed = X_test[:, mask]
                 else:
-                    X_transformed = X_gpu * decoded_gpu[:-1]
+                    weights = decoded[:-1]
+                    X_train_transformed = X_train * weights
+                    X_test_transformed = X_test * weights
 
-                scores = []
-                for _ in range(3):
-                    idx = cp.random.choice(len(X_gpu), 5000, replace=True)
-                    X_sample = cp.asnumpy(X_transformed[idx])
-                    y_sample = cp.asnumpy(y_gpu[idx])
+                knn = cuKNN(n_neighbors=5)
+                knn.fit(X_train_transformed, y_train)
+                trial_scores.append(float(knn.score(X_test_transformed, y_test)))
 
-                    X_train, X_test, y_train, y_test = train_test_split(
-                        X_sample, y_sample, test_size=0.3, random_state=None
-                    )
+            scores_all.append(trial_scores)
 
-                    knn = cuKNN(n_neighbors=5)
-                    knn.fit(X_train, y_train)
-                    scores.append(float(knn.score(X_test, y_test)))
-
-                fitness_scores.append(np.mean(scores))
-
-        # Synchronize all streams
-        for stream in streams:
-            stream.synchronize()
-
-        # Assign fitness values
-        for indv, fitness in zip(batch, fitness_scores):
-            indv['fitness'] = fitness
+        # Average across trials and assign to individuals
+        for i, indv in enumerate(batch):
+            indv['fitness'] = np.mean([scores[i] for scores in scores_all])
 
     def evolve(self):
         print("Evolution starting:")

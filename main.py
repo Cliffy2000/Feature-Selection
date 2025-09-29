@@ -4,6 +4,9 @@ import json
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler
 
+import time
+start = time.time()
+print("Starting GA Feature Selection...")
 print("Starting GA Feature Selection...")
 
 try:
@@ -38,9 +41,12 @@ if algorithm_name not in algorithms:
 print(f"Algorithm selected: {algorithm_name}")
 print("Loading and preprocessing data...")
 
-X, y = load_data()
 scaler = StandardScaler()
+print(f"Imports done: {time.time()-start:.2f}s")
+X, y = load_data()
+print(f"Data loaded: {time.time()-start:.2f}s")
 X = scaler.fit_transform(X)
+print(f"Data scaled: {time.time()-start:.2f}s")
 
 print(f"Data loaded: {X.shape[0]} samples, {X.shape[1]} features")
 
