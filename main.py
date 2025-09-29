@@ -4,6 +4,13 @@ import json
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler
 
+try:
+    from cuml.neighbors import KNeighborsClassifier as cuKNN
+    import cupy as cp
+    GPU_AVAILABLE = True
+except ImportError:
+    GPU_AVAILABLE = False
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
@@ -33,7 +40,8 @@ ga_configs = {
     'generations': 500,
     'elitism_ratio': 0.05,
     'crossover_rate': 0.7,
-    'mutation_rate': 0.2
+    'mutation_rate': 0.2,
+    'gpu': GPU_AVAILABLE
 }
 
 GA_Class = algorithms[algorithm_name]

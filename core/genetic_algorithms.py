@@ -4,6 +4,13 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 
+try:
+    from cuml.neighbors import KNeighborsClassifier as cuKNN
+    import cupy as cp
+    GPU_AVAILABLE = True
+except ImportError:
+    GPU_AVAILABLE = False
+
 
 class NumericFeaturesGA:
     """
@@ -102,7 +109,7 @@ class NumericFeaturesGA:
 
 
 class BaseGA:
-    def __init__(self, X, y, population_size, generations, elitism_ratio, crossover_rate, mutation_rate):
+    def __init__(self, X, y, population_size, generations, elitism_ratio, crossover_rate, mutation_rate, gpu=False):
         # dataset params
         self.X = X
         self.y = y
@@ -119,6 +126,9 @@ class BaseGA:
         # GA variables
         self.population = self.initialize_population()
         self.history = []
+
+        # Env Settings
+        self.gpu = False
 
     def initialize_population(self):
         population = []
@@ -172,7 +182,6 @@ class BaseGA:
         raise NotImplementedError("Each GA variant must implement decode()")
 
     def fitness_knn(self, chromosome, k=5, n_samples=2000, n_trials=3):
-
         decoded = self.decode(chromosome)
 
         if decoded.dtype == bool:
@@ -198,15 +207,63 @@ class BaseGA:
 
         return np.mean(scores)
 
+    def evaluate_batch_gpu(self, batch):
+        from sklearn.model_selection import train_test_split
+
+        # Move data to GPU once
+        X_gpu = cp.asarray(self.X, dtype=cp.float32)
+        y_gpu = cp.asarray(self.y, dtype=cp.int32)
+
+        # Prepare all chromosomes
+        all_decoded = [self.decode(indv['chromosome']) for indv in batch]
+
+        # Create GPU streams for parallel execution
+        streams = [cp.cuda.Stream() for _ in batch]
+        fitness_scores = []
+
+        for decoded, stream in zip(all_decoded, streams):
+            with stream:
+                if decoded.dtype == bool:
+                    X_transformed = X_gpu[:, decoded[:-1]]
+                    if X_transformed.shape[1] == 0:
+                        fitness_scores.append(0.0)
+                        continue
+                else:
+                    X_transformed = X_gpu * decoded[:-1]
+
+                scores = []
+                for _ in range(3):
+                    idx = cp.random.choice(len(X_gpu), 5000, replace=True)
+                    X_sample = cp.asnumpy(X_transformed[idx])
+                    y_sample = cp.asnumpy(y_gpu[idx])
+
+                    X_train, X_test, y_train, y_test = train_test_split(
+                        X_sample, y_sample, test_size=0.3, random_state=None
+                    )
+
+                    knn = cuKNN(n_neighbors=5)
+                    knn.fit(X_train, y_train)
+                    scores.append(float(knn.score(X_test, y_test)))
+
+                fitness_scores.append(np.mean(scores))
+
+        # Synchronize all streams
+        for stream in streams:
+            stream.synchronize()
+
+        # Assign fitness values
+        for indv, fitness in zip(batch, fitness_scores):
+            indv['fitness'] = fitness
+
     def evolve(self):
-        """
-        Generational GA
-        :return: best individual
-        """
         print("Evolution starting:")
 
-        for indv in self.population:
-            indv['fitness'] = self.fitness_knn(indv['chromosome'])
+        if self.gpu:
+            self.evaluate_batch_gpu(self.population)
+        else:
+            for indv in self.population:
+                indv['fitness'] = self.fitness_knn(indv['chromosome'])
+
         self.population.sort(key=lambda x: x['fitness'], reverse=True)
         print("Initial population completed.")
 
@@ -221,8 +278,11 @@ class BaseGA:
                 child2 = self.mutate(child2)
                 offspring.extend([child1, child2])
 
-            for indv in offspring:
-                indv['fitness'] = self.fitness_knn(indv['chromosome'])
+            if self.gpu:
+                self.evaluate_batch_gpu(offspring)
+            else:
+                for indv in offspring:
+                    indv['fitness'] = self.fitness_knn(indv['chromosome'])
 
             new_population.extend(offspring)
             new_population = new_population[:self.population_size]
