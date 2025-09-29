@@ -96,7 +96,7 @@ class BaseGA:
         """
         raise NotImplementedError("Each GA variant must implement decode()")
 
-    def fitness_knn(self, chromosome, k=5, n_samples=2000, n_trials=3):
+    def fitness_knn(self, chromosome, k=25, n_samples=2000, n_trials=3):
         decoded = self.decode(chromosome)
 
         if decoded.dtype == bool:
@@ -122,7 +122,7 @@ class BaseGA:
 
         return np.mean(scores)
 
-    def evaluate_knn_pytorch(self, batch, n_samples=5000, n_trials=3):
+    def evaluate_knn_pytorch(self, batch, k=25, n_samples=5000, n_trials=3):
         X_torch = torch.tensor(self.X, dtype=torch.float32).cuda()
         y_torch = torch.tensor(self.y, dtype=torch.long).cuda()
 
@@ -148,7 +148,7 @@ class BaseGA:
             X_test_batch = X_test.unsqueeze(0) * decoded_batch.unsqueeze(1)
 
             dists = torch.cdist(X_test_batch, X_train_batch)
-            _, indices = dists.topk(5, dim=2, largest=False)
+            _, indices = dists.topk(k, dim=2, largest=False)
 
             y_train_expanded = y_train.unsqueeze(0).expand(len(batch), -1)
             neighbors = torch.gather(y_train_expanded.unsqueeze(1).expand(-1, len(X_test), -1), 2, indices)
