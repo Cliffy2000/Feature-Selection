@@ -5,6 +5,9 @@ from sklearn.model_selection import cross_val_score
 
 
 class NumericFeaturesGA:
+    """
+    DEPRECATED
+    """
     def __init__(self, X, y, population_size, generations, elitism_ratio, crossover_rate, mutation_rate, fitness_evaluator):
         self.X = X
         self.y = y
@@ -155,7 +158,6 @@ class BaseGA:
     def mutate(self, indv):
         """
         Apply Gaussian noise and clip to range (0,1)
-        :return:
         """
         mask = np.random.random(len(indv['chromosome'])) < self.mutation_rate
         indv['chromosome'] += np.random.normal(0, 0.033, len(indv['chromosome'])) * mask
@@ -164,8 +166,7 @@ class BaseGA:
 
     def decode(self, chromosome):
         """
-        To be implemented by subclasses
-        Returns either boolean mask or weight array for features
+        Returns either boolean mask or weight array for features, threshold should be kept in the chromosome
         """
         raise NotImplementedError("Each GA variant must implement decode()")
 

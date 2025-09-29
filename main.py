@@ -1,35 +1,57 @@
-import argparse
 import os
-from benchmarks.pca import analyze_pca_components, run_pca_model_benchmarks
+import sys
+import json
+from datetime import datetime
+from sklearn.preprocessing import StandardScaler
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+RESULTS_DIR = os.path.join(BASE_DIR, "results")
 
-def ensure_results_dir():
-    os.makedirs("results", exist_ok=True)
+from data.data_loader import load_data
+from core.genetic_algorithms import *
 
+algorithms = {
+    'threshold': ThresholdDecodingGA,
+    'stochastic': StochasticDecodingGA,
+    'ranking': RankingDecodingGA,
+    'weighted': WeightedFeaturesGA
+}
 
-def main():
-    parser = argparse.ArgumentParser(description='Feature Selection Research Project')
-    parser.add_argument('--benchmark', type=str, choices=['pca', 'pca-models'],
-                        help='Run specific benchmark')
-    parser.add_argument('--ga', action='store_true',
-                        help='Run genetic algorithm feature selection')
-    parser.add_argument('--overwrite', action='store_true',
-                        help='Overwrite existing result files')
+algorithm_name = sys.argv[1] if len(sys.argv) > 1 else 'threshold'  # Default algorithm
 
-    args = parser.parse_args()
+if algorithm_name not in algorithms:
+    print("Invalid algorithm name.")
+    sys.exit(1)
 
-    # Ensure results directory exists
-    ensure_results_dir()
+X, y = load_data()
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
 
-    if args.benchmark == 'pca':
-        analyze_pca_components(overwrite=args.overwrite)
-    elif args.benchmark == 'pca-models':
-        run_pca_model_benchmarks(overwrite=args.overwrite)
-    elif args.ga:
-        print("GA implementation not yet available")
-    else:
-        print("No valid option specified. Use --help for options.")
+ga_configs = {
+    'population_size': 100,
+    'generations': 2000,
+    'elitism_ratio': 0.1,
+    'crossover_rate': 0.8,
+    'mutation_rate': 0.2
+}
 
+GA_Class = algorithms[algorithm_name]
+ga = GA_Class(X, y, **ga_configs)
+best = ga.evolve()
 
-if __name__ == "__main__":
-    main()
+results = {
+    'algorithm': algorithm_name,
+    'best_fitness': float(best['fitness']),
+    'best_chromosome': best['chromosome'].tolist(),
+    'history': [{'generation': h['generation'], 'best_fitness': float(h['best_fitness']),
+                 'mean_fitness': float(h['mean_fitness']), 'diversity': float(h['diversity'])}
+                for h in ga.history]
+}
+
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+output_file = os.path.join(RESULTS_DIR, f"{algorithm_name}_results_{timestamp}.json")
+with open(output_file, 'w') as f:
+    json.dump(results, f, indent=2)
+
+print(f"Results saved to {output_file}")
