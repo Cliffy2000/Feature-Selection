@@ -232,33 +232,60 @@ class BaseGA:
             if generation % 10 == 0:
                 print(f"Gen {generation}: Best = {best['fitness']:.4f}")
 
+            if fitness_values[0] > 0.999:
+                print(f"Early stop at generation {generation}: Perfect fitness achieved")
+                break
+
+        print(f"\nEvolution completed at generation {self.history[-1]['generation']}")
+        print(f"Final best fitness: {self.population[0]['fitness']:.4f}")
+        print(f"Final best individual: {self.population[0]['chromosome']}")
+
         return self.population[0]
 
 
 
-class ThresholdDecodingGA:
+class ThresholdDecodingGA(BaseGA):
     """
     This decoding method considers the value of each allele and the threshold. Features are turned on if their corresponding allele has a value larger than the threshold.
     """
-    pass
+    def decode(self, chromosome):
+        threshold = chromosome[-1]
+        mask = chromosome[:-1] > threshold
+        return np.append(mask, threshold)
 
 
-class StochasticDecodingGA:
+class StochasticDecodingGA(BaseGA):
     """
     This decoding method only uses the value of each allele. During evaluation, features are used by treating the corresponding allele values as probabilities, and aims to naturally split the allele values.
     """
-    pass
+    def decode(self, chromosome):
+        probabilities = chromosome[:-1]
+        sampled = np.random.random(len(probabilities)) < probabilities
+        return np.append(sampled, chromosome[-1])
 
 
-class RankingDecodingGA:
+class RankingDecodingGA(BaseGA):
     """
     This decoding method uses the allele values and the threshold. The allele values are considered ranking order and features with higher allele values are picked first, with the threshold determining the number of features used.
     """
-    pass
+    def decode(self, chromosome):
+        threshold = chromosome[-1]
+        n_select = int(self.n_features * threshold)
+
+        if n_select == 0:
+            mask = np.zeros(self.n_features, dtype=bool)
+        else:
+            top_indices = np.argsort(chromosome[:-1])[-n_select:]
+            mask = np.zeros(self.n_features, dtype=bool)
+            mask[top_indices] = True
+
+        return np.append(mask, threshold)
 
 
-class WeightedFeaturesGA:
+class WeightedFeaturesGA(BaseGA):
     """
     This decoding method only uses the allele values. All features are used during evaluation, but they are scaled by their corresponding allele values as an importance scaler, fading the noise features with near 0 genomes.
     """
-    pass
+    def decode(self, chromosome):
+        weights = chromosome[:-1]
+        return np.append(weights, chromosome[-1])
