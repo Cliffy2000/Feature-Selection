@@ -3,20 +3,19 @@ import sys
 import json
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler
-
 import time
+
+print("Starting GA Feature Selection...")
 start = time.time()
-print("Starting GA Feature Selection...")
-print("Starting GA Feature Selection...")
 
 try:
-    from cuml.neighbors import KNeighborsClassifier as cuKNN
-    import cupy as cp
-    GPU_AVAILABLE = True
-    print(f"GPU ENABLED: Using CUDA acceleration")
+    import torch
+    GPU_AVAILABLE = torch.cuda.is_available()
+    if GPU_AVAILABLE:
+        print(f"GPU ENABLED: Using {torch.cuda.get_device_name(0)}")
 except ImportError:
     GPU_AVAILABLE = False
-    print(f"GPU DISABLED: Using CPU computation")
+    print("GPU DISABLED: Using CPU computation")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
@@ -32,23 +31,21 @@ algorithms = {
     'weighted': WeightedFeaturesGA
 }
 
-algorithm_name = sys.argv[1] if len(sys.argv) > 1 else 'threshold'  # Default algorithm
+algorithm_name = sys.argv[1] if len(sys.argv) > 1 else 'threshold'
 
 if algorithm_name not in algorithms:
-    print("Invalid algorithm name.")
+    print(f"Invalid algorithm: {algorithm_name}")
     sys.exit(1)
 
-print(f"Algorithm selected: {algorithm_name}")
-print("Loading and preprocessing data...")
+print(f"Algorithm: {algorithm_name}")
+print("Loading data...")
 
-scaler = StandardScaler()
-print(f"Imports done: {time.time()-start:.2f}s")
 X, y = load_data()
-print(f"Data loaded: {time.time()-start:.2f}s")
+scaler = StandardScaler()
 X = scaler.fit_transform(X)
-print(f"Data scaled: {time.time()-start:.2f}s")
 
-print(f"Data loaded: {X.shape[0]} samples, {X.shape[1]} features")
+print(f"Data: {X.shape[0]} samples, {X.shape[1]} features")
+print(f"Setup time: {time.time()-start:.2f}s")
 
 ga_configs = {
     'population_size': 100,
@@ -59,13 +56,13 @@ ga_configs = {
     'gpu': GPU_AVAILABLE
 }
 
-print(f"Initializing GA with population={ga_configs['population_size']}, generations={ga_configs['generations']}")
+print(f"Initializing GA: pop={ga_configs['population_size']}, gens={ga_configs['generations']}")
 
 GA_Class = algorithms[algorithm_name]
 ga = GA_Class(X, y, **ga_configs)
 best = ga.evolve()
 
-print("Evolution complete. Saving results...")
+print("Saving results...")
 
 results = {
     'algorithm': algorithm_name,
@@ -82,3 +79,4 @@ with open(output_file, 'w') as f:
     json.dump(results, f, indent=2)
 
 print(f"Results saved to {output_file}")
+print(f"Total time: {time.time()-start:.2f}s")

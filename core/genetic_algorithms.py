@@ -1,4 +1,5 @@
 import time
+import torch
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
@@ -11,102 +12,6 @@ try:
     GPU_AVAILABLE = True
 except ImportError:
     GPU_AVAILABLE = False
-
-
-class NumericFeaturesGA:
-    """
-    DEPRECATED
-    """
-    def __init__(self, X, y, population_size, generations, elitism_ratio, crossover_rate, mutation_rate, fitness_evaluator):
-        self.X = X
-        self.y = y
-        self.n_features = X.shape[1]
-        self.n_select = self.n_features / 2
-        self.population_size = population_size
-        self.generations = generations
-        self.elitism_count = int(self.population_size * elitism_ratio)
-        self.crossover_rate = crossover_rate
-        self.mutation_rate = mutation_rate
-        self.evaluator = fitness_evaluator
-
-        self.population = self.initialize_population()
-        self.history = []
-
-    def initialize_population(self):
-        population = []
-        for _ in range(self.population_size):
-            chromosome = np.random.randint(-1, self.n_features, size=self.n_features)
-            population.append({
-                'chromosome': chromosome,
-                'fitness': 0
-            })
-
-        return population
-
-    def evaluate_population(self):
-        for indv in self.population:
-            indv['fitness'] = self.evaluator(indv['chromosome'])
-
-    def evaluate_batch(self, batch):
-        for indv in batch:
-            indv['fitness'] = self.evaluator(indv['chromosome'])
-
-    def select(self):
-        fitness_values = np.array([indv['fitness'] for indv in self.population])
-        probabilities = fitness_values / np.sum(fitness_values)
-        selected_indices = np.random.choice(len(self.population), size=2, p=probabilities)
-        return self.population[selected_indices[0]], self.population[selected_indices[1]]
-
-    def crossover(self, parent1, parent2):
-        if np.random.random() < self.crossover_rate:
-            crossover_point = np.random.randint(1, self.n_features)
-
-            child1_chromosome = np.concatenate([
-                parent1['chromosome'][:crossover_point],
-                parent2['chromosome'][crossover_point:]
-            ])
-            child2_chromosome = np.concatenate([
-                parent2['chromosome'][:crossover_point],
-                parent1['chromosome'][crossover_point:]
-            ])
-
-            child1 = {'chromosome': child1_chromosome, 'fitness': 0}
-            child2 = {'chromosome': child2_chromosome, 'fitness': 0}
-        else:
-            child1 = {'chromosome': parent1['chromosome'].copy(), 'fitness': 0}
-            child2 = {'chromosome': parent2['chromosome'].copy(), 'fitness': 0}
-
-        return child1, child2
-
-    def mutate(self, indv):
-        for i in range(len(indv['chromosome'])):
-            if np.random.random() < self.mutation_rate:
-                indv['chromosome'][i] = np.random.randint(-1, self.n_features)
-        return indv
-
-    def evolve(self):
-        self.evaluate_population()
-
-        for generation in range(self.generations):
-            new_population = self.population[:self.elitism_count]
-            new_indvs = []
-
-            while len(new_population) < self.population_size:
-                parent1, parent2 = self.select()
-                child1, child2 = self.crossover(parent1, parent2)
-
-                child1 = self.mutate(child1)
-                child2 = self.mutate(child2)
-
-                new_indvs.extend([child1, child2])
-
-            self.evaluate_batch(new_indvs)
-            new_population.extend(new_indvs)
-            self.population = new_population[:self.population_size]
-
-            self.population.sort(key=lambda x: x['fitness'], reverse=True)
-            self.history.append(self.population[0])
-            print(f"Generation {generation}: Best fitness = {self.population[0]['fitness']:.4f}")
 
 
 class BaseGA:
@@ -217,56 +122,49 @@ class BaseGA:
 
         return np.mean(scores)
 
-    def evaluate_batch_gpu(self, batch):
-        X_gpu = cp.asarray(self.X, dtype=cp.float32)
-        y_gpu = cp.asarray(self.y, dtype=cp.int32)
+    def evaluate_knn_pytorch(self, batch, n_samples=5000, n_trials=3):
+        X_torch = torch.tensor(self.X, dtype=torch.float32).cuda()
+        y_torch = torch.tensor(self.y, dtype=torch.long).cuda()
 
-        # Generate random samples once per generation
-        scores_all = []
-        for trial in range(3):
-            idx = cp.random.choice(len(X_gpu), 5000, replace=True)
-            X_sampled = X_gpu[idx]
-            y_sampled = y_gpu[idx]
+        all_scores = []
 
-            # Split once for all individuals
-            X_sample_cpu = cp.asnumpy(X_sampled)
-            y_sample_cpu = cp.asnumpy(y_sampled)
-            X_train, X_test, y_train, y_test = train_test_split(
-                X_sample_cpu, y_sample_cpu, test_size=0.3, random_state=None
-            )
+        for trial in range(n_trials):
+            idx = torch.randperm(len(X_torch))[:n_samples].cuda()
+            X_sampled = X_torch[idx]
+            y_sampled = y_torch[idx]
 
-            # Now evaluate ALL individuals on the same train/test split
-            trial_scores = []
-            for indv in batch:
-                decoded = self.decode(indv['chromosome'])
+            train_size = int(0.7 * n_samples)
+            X_train = X_sampled[:train_size]
+            y_train = y_sampled[:train_size]
+            X_test = X_sampled[train_size:]
+            y_test = y_sampled[train_size:]
 
-                if decoded.dtype == bool:
-                    mask = decoded[:-1]
-                    if mask.sum() == 0:
-                        trial_scores.append(0.0)
-                        continue
-                    X_train_transformed = X_train[:, mask]
-                    X_test_transformed = X_test[:, mask]
-                else:
-                    weights = decoded[:-1]
-                    X_train_transformed = X_train * weights
-                    X_test_transformed = X_test * weights
+            decoded_batch = torch.stack([
+                torch.tensor(self.decode(indv['chromosome'])[:-1], dtype=torch.float32).cuda()
+                for indv in batch
+            ])
 
-                knn = cuKNN(n_neighbors=5)
-                knn.fit(X_train_transformed, y_train)
-                trial_scores.append(float(knn.score(X_test_transformed, y_test)))
+            X_train_batch = X_train.unsqueeze(0) * decoded_batch.unsqueeze(1)
+            X_test_batch = X_test.unsqueeze(0) * decoded_batch.unsqueeze(1)
 
-            scores_all.append(trial_scores)
+            dists = torch.cdist(X_test_batch, X_train_batch)
+            _, indices = dists.topk(5, dim=2, largest=False)
 
-        # Average across trials and assign to individuals
+            y_train_expanded = y_train.unsqueeze(0).expand(len(batch), -1)
+            neighbors = torch.gather(y_train_expanded.unsqueeze(1).expand(-1, len(X_test), -1), 2, indices)
+            predictions = neighbors.mode(dim=2).values
+
+            accuracies = (predictions == y_test.unsqueeze(0)).float().mean(dim=1)
+            all_scores.append(accuracies.cpu().numpy())
+
         for i, indv in enumerate(batch):
-            indv['fitness'] = np.mean([scores[i] for scores in scores_all])
+            indv['fitness'] = float(np.mean([scores[i] for scores in all_scores]))
 
     def evolve(self):
         print("Evolution starting:")
 
         if self.gpu:
-            self.evaluate_batch_gpu(self.population)
+            self.evaluate_knn_pytorch(self.population)
         else:
             for indv in self.population:
                 indv['fitness'] = self.fitness_knn(indv['chromosome'])
@@ -286,7 +184,7 @@ class BaseGA:
                 offspring.extend([child1, child2])
 
             if self.gpu:
-                self.evaluate_batch_gpu(offspring)
+                self.evaluate_knn_pytorch(offspring)
             else:
                 for indv in offspring:
                     indv['fitness'] = self.fitness_knn(indv['chromosome'])
@@ -330,9 +228,8 @@ class ThresholdDecodingGA(BaseGA):
     This decoding method considers the value of each allele and the threshold. Features are turned on if their corresponding allele has a value larger than the threshold.
     """
     def decode(self, chromosome):
-        threshold = chromosome[-1]
-        mask = chromosome[:-1] > threshold
-        return np.append(mask, threshold)
+        weights = (chromosome[:-1] > chromosome[-1]).astype(np.float32)
+        return np.append(weights, chromosome[-1])
 
 
 class StochasticDecodingGA(BaseGA):
@@ -340,9 +237,8 @@ class StochasticDecodingGA(BaseGA):
     This decoding method only uses the value of each allele. During evaluation, features are used by treating the corresponding allele values as probabilities, and aims to naturally split the allele values.
     """
     def decode(self, chromosome):
-        probabilities = chromosome[:-1]
-        sampled = np.random.random(len(probabilities)) < probabilities
-        return np.append(sampled, chromosome[-1])
+        weights = (np.random.random(self.n_features) < chromosome[:-1]).astype(np.float32)
+        return np.append(weights, chromosome[-1])
 
 
 class RankingDecodingGA(BaseGA):
@@ -352,15 +248,10 @@ class RankingDecodingGA(BaseGA):
     def decode(self, chromosome):
         threshold = chromosome[-1]
         n_select = int(self.n_features * threshold)
-
-        if n_select == 0:
-            mask = np.zeros(self.n_features, dtype=bool)
-        else:
-            top_indices = np.argsort(chromosome[:-1])[-n_select:]
-            mask = np.zeros(self.n_features, dtype=bool)
-            mask[top_indices] = True
-
-        return np.append(mask, threshold)
+        weights = np.zeros(self.n_features, dtype=np.float32)
+        if n_select > 0:
+            weights[np.argsort(chromosome[:-1])[-n_select:]] = 1.0
+        return np.append(weights, threshold)
 
 
 class WeightedFeaturesGA(BaseGA):
@@ -368,5 +259,4 @@ class WeightedFeaturesGA(BaseGA):
     This decoding method only uses the allele values. All features are used during evaluation, but they are scaled by their corresponding allele values as an importance scaler, fading the noise features with near 0 genomes.
     """
     def decode(self, chromosome):
-        weights = chromosome[:-1]
-        return np.append(weights, chromosome[-1])
+        return chromosome.astype(np.float32)
