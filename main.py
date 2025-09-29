@@ -36,7 +36,7 @@ scaler = StandardScaler()
 X = scaler.fit_transform(X)
 
 ga_configs = {
-    'population_size': 50,
+    'population_size': 100,
     'generations': 500,
     'elitism_ratio': 0.05,
     'crossover_rate': 0.7,

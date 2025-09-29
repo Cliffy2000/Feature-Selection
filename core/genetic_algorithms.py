@@ -168,11 +168,20 @@ class BaseGA:
 
     def mutate(self, indv):
         """
-        Apply Gaussian noise and clip to range (0,1)
+        Randomly generated new allele value for feature and adds random normal value for the threshold
         """
         mask = np.random.random(len(indv['chromosome'])) < self.mutation_rate
-        indv['chromosome'] += np.random.normal(0, 0.1, len(indv['chromosome'])) * mask
-        indv['chromosome'] = np.clip(indv['chromosome'], 0, 1)
+
+        # Features: complete random reset when mutating
+        for i in range(self.n_features):
+            if mask[i]:
+                indv['chromosome'][i] = np.random.random()
+
+        # Threshold: larger gaussian perturbation
+        if mask[-1]:
+            indv['chromosome'][-1] += np.random.normal(0, 0.05)
+            indv['chromosome'][-1] = np.clip(indv['chromosome'][-1], 0, 1)
+
         return indv
 
     def decode(self, chromosome):
