@@ -129,7 +129,7 @@ class BaseGA:
         self.history = []
 
         # Env Settings
-        self.gpu = False
+        self.gpu = gpu
 
     def initialize_population(self):
         population = []
@@ -218,13 +218,9 @@ class BaseGA:
         return np.mean(scores)
 
     def evaluate_batch_gpu(self, batch):
-        print(f"GPU batch evaluation starting for {len(batch)} individuals...")
-        start = time.time()
-
         # Move data to GPU once
         X_gpu = cp.asarray(self.X, dtype=cp.float32)
         y_gpu = cp.asarray(self.y, dtype=cp.int32)
-        print(f"Data moved to GPU: {time.time() - start:.2f}s")
 
         # Prepare all chromosomes
         all_decoded = [self.decode(indv['chromosome']) for indv in batch]
@@ -235,13 +231,15 @@ class BaseGA:
 
         for decoded, stream in zip(all_decoded, streams):
             with stream:
+                decoded_gpu = cp.asarray(decoded, dtype=cp.float32)
+
                 if decoded.dtype == bool:
-                    X_transformed = X_gpu[:, decoded[:-1]]
+                    X_transformed = X_gpu[:, decoded_gpu[:-1].astype(cp.bool_)]
                     if X_transformed.shape[1] == 0:
                         fitness_scores.append(0.0)
                         continue
                 else:
-                    X_transformed = X_gpu * decoded[:-1]
+                    X_transformed = X_gpu * decoded_gpu[:-1]
 
                 scores = []
                 for _ in range(3):
