@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
 
 
 class NumericFeaturesGA:
@@ -160,7 +161,7 @@ class BaseGA:
         Apply Gaussian noise and clip to range (0,1)
         """
         mask = np.random.random(len(indv['chromosome'])) < self.mutation_rate
-        indv['chromosome'] += np.random.normal(0, 0.033, len(indv['chromosome'])) * mask
+        indv['chromosome'] += np.random.normal(0, 0.1, len(indv['chromosome'])) * mask
         indv['chromosome'] = np.clip(indv['chromosome'], 0, 1)
         return indv
 
@@ -170,32 +171,44 @@ class BaseGA:
         """
         raise NotImplementedError("Each GA variant must implement decode()")
 
-    def fitness_knn(self, chromosome, k=5):
-        """
-        Evaluate chromosome using KNN classifier
-        Uses decode() to transform features, then evaluates accuracy
-        """
+    def fitness_knn(self, chromosome, k=5, n_samples=2000, n_trials=3):
+
         decoded = self.decode(chromosome)
 
         if decoded.dtype == bool:
-            X_transformed = self.X[:, decoded[:-1]]  # boolean mask (exclude threshold)
-            if X_transformed.shape[1] == 0:  # no features selected
+            X_transformed = self.X[:, decoded[:-1]]
+            if X_transformed.shape[1] == 0:
                 return 0.0
         else:
-            X_transformed = self.X * decoded[:-1]  # multiply by weights (exclude threshold)
+            X_transformed = self.X * decoded[:-1]
 
-        knn = KNeighborsClassifier(n_neighbors=k)
-        scores = cross_val_score(knn, X_transformed, self.y, cv=3, scoring='accuracy')
-        return scores.mean()
+        scores = []
+        for _ in range(n_trials):
+            idx = np.random.choice(len(self.X), n_samples, replace=True)
+            X_sample = X_transformed[idx]
+            y_sample = self.y[idx]
+
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_sample, y_sample, test_size=0.3, random_state=None
+            )
+
+            knn = KNeighborsClassifier(n_neighbors=k)
+            knn.fit(X_train, y_train)
+            scores.append(knn.score(X_test, y_test))
+
+        return np.mean(scores)
 
     def evolve(self):
         """
         Generational GA
         :return: best individual
         """
+        print("Evolution starting:")
+
         for indv in self.population:
             indv['fitness'] = self.fitness_knn(indv['chromosome'])
         self.population.sort(key=lambda x: x['fitness'], reverse=True)
+        print("Initial population completed.")
 
         for generation in range(self.generations):
             new_population = self.population[:self.elitism_count].copy()
@@ -230,7 +243,7 @@ class BaseGA:
                 'best_chromosome': self.population[0]['chromosome'].copy()
             })
 
-            if generation % 10 == 0:
+            if generation % 5 == 0:
                 print(f"Gen {generation}: Best = {best['fitness']:.4f}")
 
             if fitness_values[0] > 0.999:
