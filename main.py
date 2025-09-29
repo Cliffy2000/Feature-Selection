@@ -4,12 +4,16 @@ import json
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler
 
+print("Starting GA Feature Selection...")
+
 try:
     from cuml.neighbors import KNeighborsClassifier as cuKNN
     import cupy as cp
     GPU_AVAILABLE = True
+    print(f"GPU ENABLED: Using CUDA acceleration")
 except ImportError:
     GPU_AVAILABLE = False
+    print(f"GPU DISABLED: Using CPU computation")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
@@ -31,9 +35,14 @@ if algorithm_name not in algorithms:
     print("Invalid algorithm name.")
     sys.exit(1)
 
+print(f"Algorithm selected: {algorithm_name}")
+print("Loading and preprocessing data...")
+
 X, y = load_data()
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
+
+print(f"Data loaded: {X.shape[0]} samples, {X.shape[1]} features")
 
 ga_configs = {
     'population_size': 100,
@@ -44,9 +53,13 @@ ga_configs = {
     'gpu': GPU_AVAILABLE
 }
 
+print(f"Initializing GA with population={ga_configs['population_size']}, generations={ga_configs['generations']}")
+
 GA_Class = algorithms[algorithm_name]
 ga = GA_Class(X, y, **ga_configs)
 best = ga.evolve()
+
+print("Evolution complete. Saving results...")
 
 results = {
     'algorithm': algorithm_name,
