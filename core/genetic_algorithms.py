@@ -128,16 +128,26 @@ class BaseGA:
 
         return np.mean(scores)
 
-    def evaluate_knn_pytorch(self, batch, k=25, n_samples=5000, n_trials=3):
+    def evaluate_knn_pytorch(self, batch, k=25, n_samples=10000, n_trials=7):
         X_torch = torch.tensor(self.X, dtype=torch.float32).cuda()
         y_torch = torch.tensor(self.y, dtype=torch.long).cuda()
 
+        n_total = len(X_torch)
+        indices = torch.randperm(n_total).cuda()
         all_scores = []
 
         for trial in range(n_trials):
-            idx = torch.randperm(len(X_torch))[:n_samples].cuda()
-            X_sampled = X_torch[idx]
-            y_sampled = y_torch[idx]
+            start_idx = (trial * n_samples) % n_total
+            end_idx = start_idx + n_samples
+
+            if end_idx > n_total:
+                # Wrap around
+                trial_indices = torch.cat([indices[start_idx:], indices[:end_idx - n_total]])
+            else:
+                trial_indices = indices[start_idx:end_idx]
+
+            X_sampled = X_torch[trial_indices]
+            y_sampled = y_torch[trial_indices]
 
             train_size = int(0.7 * n_samples)
             X_train = X_sampled[:train_size]
