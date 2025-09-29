@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
@@ -217,11 +218,13 @@ class BaseGA:
         return np.mean(scores)
 
     def evaluate_batch_gpu(self, batch):
-        from sklearn.model_selection import train_test_split
+        print(f"GPU batch evaluation starting for {len(batch)} individuals...")
+        start = time.time()
 
         # Move data to GPU once
         X_gpu = cp.asarray(self.X, dtype=cp.float32)
         y_gpu = cp.asarray(self.y, dtype=cp.int32)
+        print(f"Data moved to GPU: {time.time() - start:.2f}s")
 
         # Prepare all chromosomes
         all_decoded = [self.decode(indv['chromosome']) for indv in batch]
