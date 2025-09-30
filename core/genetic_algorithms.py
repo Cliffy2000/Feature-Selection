@@ -9,21 +9,6 @@ from sklearn.linear_model import LogisticRegression
 from multiprocessing import Pool, cpu_count
 
 
-def _knn_worker(args):
-    X_transformed, y, k, n_samples = args
-    idx = np.random.choice(len(X_transformed), n_samples, replace=True)
-    X_sample = X_transformed[idx]
-    y_sample = y[idx]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_sample, y_sample, test_size=0.3
-    )
-
-    knn = KNeighborsClassifier(n_neighbors=k)
-    knn.fit(X_train, y_train)
-    return knn.score(X_test, y_test)
-
-
 class BaseGA:
     def __init__(self, X, y, population_size, generations, elitism_ratio, crossover_rate, mutation_rate, gpu=False):
         # dataset params
@@ -138,21 +123,40 @@ class BaseGA:
 
         return np.mean(scores)
 
-    def fitness_knn_parallel(self, chromosome, k=50, n_samples=70000, n_trials=3):
-        decoded = self.decode(chromosome)
+    def evaluate_population_knn_parallel(self, population, k=25, n_samples=70000, n_trials=3):
+        def evaluate_single(indv_data):
+            indv, X, y, k, n_samples, n_trials = indv_data
+            decoded = self.decode(indv['chromosome'])
 
-        if decoded.dtype == bool:
-            X_transformed = self.X[:, decoded[:-1]]
-            if X_transformed.shape[1] == 0:
-                return 0.0
-        else:
-            X_transformed = self.X * decoded[:-1]
+            if decoded.dtype == bool:
+                X_transformed = X[:, decoded[:-1]]
+                if X_transformed.shape[1] == 0:
+                    return 0.0
+            else:
+                X_transformed = X * decoded[:-1]
 
-        with Pool(processes=min(n_trials, cpu_count())) as pool:
-            args = [(X_transformed, self.y, k, n_samples) for _ in range(n_trials)]
-            scores = pool.map(_knn_worker, args)
+            scores = []
+            for _ in range(n_trials):
+                idx = np.random.choice(len(X_transformed), n_samples, replace=True)
+                X_sample = X_transformed[idx]
+                y_sample = y[idx]
 
-        return np.mean(scores)
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X_sample, y_sample, test_size=0.3
+                )
+
+                knn = KNeighborsClassifier(n_neighbors=k)
+                knn.fit(X_train, y_train)
+                scores.append(knn.score(X_test, y_test))
+
+            return np.mean(scores)
+
+        with Pool(processes=cpu_count()) as pool:
+            args = [(indv, self.X, self.y, k, n_samples, n_trials) for indv in population]
+            fitness_values = pool.map(evaluate_single, args)
+
+        for indv, fitness in zip(population, fitness_values):
+            indv['fitness'] = fitness
 
     def evaluate_population_lr(self, batch, n_trials=1):
         # Use full dataset with fixed split(s)
@@ -194,8 +198,7 @@ class BaseGA:
     def evolve(self):
         print("Evolution starting:")
 
-        for indv in self.population:
-            indv['fitness'] = self.fitness_knn_parallel(indv['chromosome'])
+        self.evaluate_population_knn_parallel(self.population)
 
         self.population.sort(key=lambda x: x['fitness'], reverse=True)
         print("Initial population completed.")
@@ -219,8 +222,7 @@ class BaseGA:
 
             new_population = new_population[:self.population_size]
 
-            for indv in new_population:
-                indv['fitness'] = self.fitness_knn_parallel(indv['chromosome'])
+            self.evaluate_population_knn_parallel(new_population)
 
             new_population.sort(key=lambda x: x['fitness'], reverse=True)
             self.population = new_population
