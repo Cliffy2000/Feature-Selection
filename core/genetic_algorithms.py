@@ -5,10 +5,12 @@ import pandas as pd
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
 
 try:
     from cuml.neighbors import KNeighborsClassifier as cuKNN
     import cupy as cp
+
     GPU_AVAILABLE = True
 except ImportError:
     GPU_AVAILABLE = False
@@ -39,7 +41,7 @@ class BaseGA:
     def initialize_population(self):
         population = []
         for _ in range(self.population_size):
-            chromosome = np.random.rand(self.n_features + 1)    # additional value for threshold
+            chromosome = np.random.rand(self.n_features + 1)  # additional value for threshold
             population.append({
                 'chromosome': chromosome,
                 'fitness': 0
@@ -119,7 +121,7 @@ class BaseGA:
             y_sample = self.y[idx]
 
             X_train, X_test, y_train, y_test = train_test_split(
-                X_sample, y_sample, test_size=0.3, random_state=None
+                X_sample, y_sample, test_size=0.3
             )
 
             knn = KNeighborsClassifier(n_neighbors=k)
@@ -133,18 +135,16 @@ class BaseGA:
         y_torch = torch.tensor(self.y, dtype=torch.long).cuda()
 
         n_total = len(X_torch)
-        indices = torch.randperm(n_total).cuda()
+        sample_indices = torch.randperm(n_total).cuda()
         all_scores = []
 
         for trial in range(n_trials):
             start_idx = (trial * n_samples) % n_total
             end_idx = start_idx + n_samples
-
             if end_idx > n_total:
-                # Wrap around
-                trial_indices = torch.cat([indices[start_idx:], indices[:end_idx - n_total]])
+                trial_indices = torch.cat([sample_indices[start_idx:], sample_indices[:end_idx - n_total]])
             else:
-                trial_indices = indices[start_idx:end_idx]
+                trial_indices = sample_indices[start_idx:end_idx]
 
             X_sampled = X_torch[trial_indices]
             y_sampled = y_torch[trial_indices]
@@ -164,10 +164,10 @@ class BaseGA:
             X_test_batch = X_test.unsqueeze(0) * decoded_batch.unsqueeze(1)
 
             dists = torch.cdist(X_test_batch, X_train_batch)
-            _, indices = dists.topk(k, dim=2, largest=False)
+            _, knn_indices = dists.topk(k, dim=2, largest=False)
 
             y_train_expanded = y_train.unsqueeze(0).expand(len(batch), -1)
-            neighbors = torch.gather(y_train_expanded.unsqueeze(1).expand(-1, len(X_test), -1), 2, indices)
+            neighbors = torch.gather(y_train_expanded.unsqueeze(1).expand(-1, len(X_test), -1), 2, knn_indices)
             predictions = neighbors.mode(dim=2).values
 
             accuracies = (predictions == y_test.unsqueeze(0)).float().mean(dim=1)
@@ -176,11 +176,48 @@ class BaseGA:
         for i, indv in enumerate(batch):
             indv['fitness'] = float(np.mean([scores[i] for scores in all_scores]))
 
+    def evaluate_population_lr(self, batch, n_trials=1):
+        # Use full dataset with fixed split(s)
+        all_scores = []
+
+        for trial in range(n_trials):
+            X_train, X_test, y_train, y_test = train_test_split(
+                self.X, self.y, test_size=0.3, stratify=self.y
+            )
+
+            trial_scores = []
+            for indv in batch:
+                # Decode chromosome to get feature weights
+                decoded = self.decode(indv['chromosome'])
+                weights = decoded[:-1]
+
+                # Apply feature selection
+                X_train_selected = X_train * weights
+                X_test_selected = X_test * weights
+
+                # Train logistic regression with L1 penalty (good against noise)
+                lr = LogisticRegression(
+                    penalty='l1',
+                    solver='saga',  # Supports L1
+                    C=1.0,  # Regularization strength (lower = more penalty)
+                    max_iter=200
+                )
+
+                lr.fit(X_train_selected, y_train)
+                score = lr.score(X_test_selected, y_test)
+                trial_scores.append(score)
+
+            all_scores.append(trial_scores)
+
+        # Average across trials and assign to individuals
+        for i, indv in enumerate(batch):
+            indv['fitness'] = float(np.mean([scores[i] for scores in all_scores]))
+
     def evolve(self):
         print("Evolution starting:")
 
         if self.gpu:
-            self.evaluate_knn_pytorch(self.population)
+            self.evaluate_population_lr(self.population)
         else:
             for indv in self.population:
                 indv['fitness'] = self.fitness_knn(indv['chromosome'])
@@ -209,7 +246,7 @@ class BaseGA:
 
             # Evaluate ENTIRE population with fresh samples
             if self.gpu and torch.cuda.is_available():
-                self.evaluate_knn_pytorch(new_population)
+                self.evaluate_population_lr(new_population)
             else:
                 for indv in new_population:
                     indv['fitness'] = self.fitness_knn(indv['chromosome'])
@@ -244,11 +281,11 @@ class BaseGA:
         return self.population[0]
 
 
-
 class ThresholdDecodingGA(BaseGA):
     """
     This decoding method considers the value of each allele and the threshold. Features are turned on if their corresponding allele has a value larger than the threshold.
     """
+
     def decode(self, chromosome):
         weights = (chromosome[:-1] > chromosome[-1]).astype(np.float32)
         return np.append(weights, chromosome[-1])
@@ -258,6 +295,7 @@ class StochasticDecodingGA(BaseGA):
     """
     This decoding method only uses the value of each allele. During evaluation, features are used by treating the corresponding allele values as probabilities, and aims to naturally split the allele values.
     """
+
     def decode(self, chromosome):
         weights = (np.random.random(self.n_features) < chromosome[:-1]).astype(np.float32)
         return np.append(weights, chromosome[-1])
@@ -267,6 +305,7 @@ class RankingDecodingGA(BaseGA):
     """
     This decoding method uses the allele values and the threshold. The allele values are considered ranking order and features with higher allele values are picked first, with the threshold determining the number of features used.
     """
+
     def decode(self, chromosome):
         threshold = chromosome[-1]
         n_select = int(self.n_features * threshold)
@@ -280,5 +319,6 @@ class WeightedFeaturesGA(BaseGA):
     """
     This decoding method only uses the allele values. All features are used during evaluation, but they are scaled by their corresponding allele values as an importance scaler, fading the noise features with near 0 genomes.
     """
+
     def decode(self, chromosome):
         return chromosome.astype(np.float32)
