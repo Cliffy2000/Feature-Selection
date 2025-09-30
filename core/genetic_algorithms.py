@@ -194,11 +194,8 @@ class BaseGA:
     def evolve(self):
         print("Evolution starting:")
 
-        if self.gpu:
-            self.evaluate_population_lr(self.population)
-        else:
-            for indv in self.population:
-                indv['fitness'] = self.fitness_knn(indv['chromosome'])
+        for indv in self.population:
+            indv['fitness'] = self.fitness_knn_parallel(indv['chromosome'])
 
         self.population.sort(key=lambda x: x['fitness'], reverse=True)
         print("Initial population completed.")
@@ -222,12 +219,8 @@ class BaseGA:
 
             new_population = new_population[:self.population_size]
 
-            # Evaluate ENTIRE population with fresh samples
-            if self.gpu and torch.cuda.is_available():
-                self.evaluate_population_lr(new_population)
-            else:
-                for indv in new_population:
-                    indv['fitness'] = self.fitness_knn(indv['chromosome'])
+            for indv in new_population:
+                indv['fitness'] = self.fitness_knn_parallel(indv['chromosome'])
 
             new_population.sort(key=lambda x: x['fitness'], reverse=True)
             self.population = new_population
