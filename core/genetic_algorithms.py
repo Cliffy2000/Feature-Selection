@@ -6,14 +6,22 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
+from multiprocessing import Pool, cpu_count
 
-try:
-    from cuml.neighbors import KNeighborsClassifier as cuKNN
-    import cupy as cp
 
-    GPU_AVAILABLE = True
-except ImportError:
-    GPU_AVAILABLE = False
+def _knn_worker(args):
+    X_transformed, y, k, n_samples = args
+    idx = np.random.choice(len(X_transformed), n_samples, replace=True)
+    X_sample = X_transformed[idx]
+    y_sample = y[idx]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_sample, y_sample, test_size=0.3
+    )
+
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit(X_train, y_train)
+    return knn.score(X_test, y_test)
 
 
 class BaseGA:
@@ -130,51 +138,21 @@ class BaseGA:
 
         return np.mean(scores)
 
-    def evaluate_knn_pytorch(self, batch, k=25, n_samples=10000, n_trials=7):
-        X_torch = torch.tensor(self.X, dtype=torch.float32).cuda()
-        y_torch = torch.tensor(self.y, dtype=torch.long).cuda()
+    def fitness_knn_parallel(self, chromosome, k=50, n_samples=70000, n_trials=3):
+        decoded = self.decode(chromosome)
 
-        n_total = len(X_torch)
-        sample_indices = torch.randperm(n_total).cuda()
-        all_scores = []
+        if decoded.dtype == bool:
+            X_transformed = self.X[:, decoded[:-1]]
+            if X_transformed.shape[1] == 0:
+                return 0.0
+        else:
+            X_transformed = self.X * decoded[:-1]
 
-        for trial in range(n_trials):
-            start_idx = (trial * n_samples) % n_total
-            end_idx = start_idx + n_samples
-            if end_idx > n_total:
-                trial_indices = torch.cat([sample_indices[start_idx:], sample_indices[:end_idx - n_total]])
-            else:
-                trial_indices = sample_indices[start_idx:end_idx]
+        with Pool(processes=min(n_trials, cpu_count())) as pool:
+            args = [(X_transformed, self.y, k, n_samples) for _ in range(n_trials)]
+            scores = pool.map(_knn_worker, args)
 
-            X_sampled = X_torch[trial_indices]
-            y_sampled = y_torch[trial_indices]
-
-            train_size = int(0.7 * n_samples)
-            X_train = X_sampled[:train_size]
-            y_train = y_sampled[:train_size]
-            X_test = X_sampled[train_size:]
-            y_test = y_sampled[train_size:]
-
-            decoded_batch = torch.stack([
-                torch.tensor(self.decode(indv['chromosome'])[:-1], dtype=torch.float32).cuda()
-                for indv in batch
-            ])
-
-            X_train_batch = X_train.unsqueeze(0) * decoded_batch.unsqueeze(1)
-            X_test_batch = X_test.unsqueeze(0) * decoded_batch.unsqueeze(1)
-
-            dists = torch.cdist(X_test_batch, X_train_batch)
-            _, knn_indices = dists.topk(k, dim=2, largest=False)
-
-            y_train_expanded = y_train.unsqueeze(0).expand(len(batch), -1)
-            neighbors = torch.gather(y_train_expanded.unsqueeze(1).expand(-1, len(X_test), -1), 2, knn_indices)
-            predictions = neighbors.mode(dim=2).values
-
-            accuracies = (predictions == y_test.unsqueeze(0)).float().mean(dim=1)
-            all_scores.append(accuracies.cpu().numpy())
-
-        for i, indv in enumerate(batch):
-            indv['fitness'] = float(np.mean([scores[i] for scores in all_scores]))
+        return np.mean(scores)
 
     def evaluate_population_lr(self, batch, n_trials=1):
         # Use full dataset with fixed split(s)
@@ -287,7 +265,7 @@ class ThresholdDecodingGA(BaseGA):
     """
 
     def decode(self, chromosome):
-        weights = (chromosome[:-1] > chromosome[-1]).astype(np.float32)
+        weights = chromosome[:-1] > chromosome[-1]
         return np.append(weights, chromosome[-1])
 
 
@@ -297,7 +275,7 @@ class StochasticDecodingGA(BaseGA):
     """
 
     def decode(self, chromosome):
-        weights = (np.random.random(self.n_features) < chromosome[:-1]).astype(np.float32)
+        weights = np.random.random(self.n_features) < chromosome[:-1]
         return np.append(weights, chromosome[-1])
 
 
@@ -309,10 +287,12 @@ class RankingDecodingGA(BaseGA):
     def decode(self, chromosome):
         threshold = chromosome[-1]
         n_select = int(self.n_features * threshold)
-        weights = np.zeros(self.n_features, dtype=np.float32)
+        mask = np.zeros(self.n_features, dtype=bool)
+
         if n_select > 0:
-            weights[np.argsort(chromosome[:-1])[-n_select:]] = 1.0
-        return np.append(weights, threshold)
+            mask[np.argpartition(chromosome[:-1], -n_select)[-n_select:]] = True
+
+        return np.append(mask, threshold)
 
 
 class WeightedFeaturesGA(BaseGA):

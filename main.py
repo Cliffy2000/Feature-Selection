@@ -8,15 +8,6 @@ import time
 print("Starting GA Feature Selection...")
 start = time.time()
 
-try:
-    import torch
-    GPU_AVAILABLE = torch.cuda.is_available()
-    if GPU_AVAILABLE:
-        print(f"GPU ENABLED: Using {torch.cuda.get_device_name(0)}")
-except ImportError:
-    GPU_AVAILABLE = False
-    print("GPU DISABLED: Using CPU computation")
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 RESULTS_DIR = os.path.join(BASE_DIR, "results")
@@ -53,7 +44,7 @@ ga_configs = {
     'elitism_ratio': 0.05,
     'crossover_rate': 0.7,
     'mutation_rate': 0.2,
-    'gpu': GPU_AVAILABLE
+    'gpu': False
 }
 
 print(f"Initializing GA: pop={ga_configs['population_size']}, gens={ga_configs['generations']}")

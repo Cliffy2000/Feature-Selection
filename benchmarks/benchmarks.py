@@ -77,13 +77,3 @@ for k in k_values:
         scores.append(knn.score(X_test_s, y_test_s))
 
     print(f"k={k:3d}: {np.mean(scores):.4f} (±{np.std(scores):.4f})")
-
-
-# Evaluate the same chromosome 10 times on fixed data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-scores = []
-for _ in range(10):
-    knn = KNeighborsClassifier(n_neighbors=25)
-    knn.fit(X_train, y_train)
-    scores.append(knn.score(X_test, y_test))
-print(f"Score variance on fixed data: {np.std(scores)}")
