@@ -97,7 +97,7 @@ class BaseGA:
         """
         raise NotImplementedError("Each GA variant must implement decode()")
 
-    def fitness_knn(self, chromosome, k=25, n_samples=2000, n_trials=3):
+    def fitness_knn(self, chromosome, k=5, n_trials=3):
         decoded = self.decode(chromosome)
 
         if decoded.dtype == bool:
@@ -109,12 +109,8 @@ class BaseGA:
 
         scores = []
         for _ in range(n_trials):
-            idx = np.random.choice(len(self.X), n_samples, replace=True)
-            X_sample = X_transformed[idx]
-            y_sample = self.y[idx]
-
             X_train, X_test, y_train, y_test = train_test_split(
-                X_sample, y_sample, test_size=0.3
+                X_transformed, self.y, test_size=0.25
             )
 
             knn = KNeighborsClassifier(n_neighbors=k)
@@ -123,6 +119,7 @@ class BaseGA:
 
         return np.mean(scores)
 
+    """
     def evaluate_population_knn_parallel(self, population, k=25, n_samples=70000, n_trials=3):
         def evaluate_single(indv_data):
             indv, X, y, k, n_samples, n_trials = indv_data
@@ -194,11 +191,13 @@ class BaseGA:
         # Average across trials and assign to individuals
         for i, indv in enumerate(batch):
             indv['fitness'] = float(np.mean([scores[i] for scores in all_scores]))
+    """
 
     def evolve(self):
         print("Evolution starting:")
 
-        self.evaluate_population_knn_parallel(self.population)
+        for indv in self.population:
+            indv['fitness'] = self.fitness_knn(indv['chromosome'])
 
         self.population.sort(key=lambda x: x['fitness'], reverse=True)
         print("Initial population completed.")
@@ -222,7 +221,8 @@ class BaseGA:
 
             new_population = new_population[:self.population_size]
 
-            self.evaluate_population_knn_parallel(new_population)
+            for indv in new_population:
+                indv['fitness'] = self.fitness_knn(indv['chromosome'])
 
             new_population.sort(key=lambda x: x['fitness'], reverse=True)
             self.population = new_population
@@ -243,9 +243,11 @@ class BaseGA:
             if generation % 5 == 0:
                 print(f"Gen {generation}: Best = {best['fitness']:.4f}")
 
+            '''
             if fitness_values[0] > 0.999:
                 print(f"Early stop at generation {generation}: Perfect fitness achieved")
                 break
+            '''
 
         print(f"\nEvolution completed at generation {self.history[-1]['generation']}")
         print(f"Final best fitness: {self.population[0]['fitness']:.4f}")

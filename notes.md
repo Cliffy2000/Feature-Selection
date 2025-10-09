@@ -1,8 +1,8 @@
 # Notes
 
-## Designs
-### Threshold encoding / decoding
+ - Stochastic decoding failed on iris
 
-
-## Dataset
-Diabetes dataset with artificial noise features
+### Weighted decoding
+ - weight^3, sharper activation
+ - penalty for large feature count
+ - w_h = 0.0 + np.random.uniform(-0.01, 0.01, shape)

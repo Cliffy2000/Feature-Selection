@@ -1,0 +1,43 @@
+{
+  "algorithm": "weighted",
+  "best_fitness": 1.0,
+  "best_chromosome": [
+    0.4857367190803319,
+    0.11827252999953208,
+    0.831435534717036,
+    0.6709789945475862,
+    0.3488736957689294
+  ],
+  "history": [
+    {
+      "generation": 0,
+      "best_fitness": 0.9824561403508772,
+      "mean_fitness": 0.9293859649122806,
+      "diversity": 0.25528333110951945
+    },
+    {
+      "generation": 1,
+      "best_fitness": 0.9736842105263158,
+      "mean_fitness": 0.9254385964912281,
+      "diversity": 0.23227007726961552
+    },
+    {
+      "generation": 2,
+      "best_fitness": 0.9649122807017544,
+      "mean_fitness": 0.9403508771929827,
+      "diversity": 0.2184407710815605
+    },
+    {
+      "generation": 3,
+      "best_fitness": 0.9824561403508772,
+      "mean_fitness": 0.9500000000000002,
+      "diversity": 0.19306117648277019
+    },
+    {
+      "generation": 4,
+      "best_fitness": 1.0,
+      "mean_fitness": 0.948245614035088,
+      "diversity": 0.17537154175666012
+    }
+  ]
+}
