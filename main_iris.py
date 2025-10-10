@@ -17,12 +17,13 @@ from core.genetic_algorithms import *
 
 algorithms = {
     'threshold': ThresholdDecodingGA,
+    'thresholdPenalty': ThresholdDecodingPenaltyGA,
     'stochastic': StochasticDecodingGA,
     'ranking': RankingDecodingGA,
     'weighted': WeightedFeaturesGA
 }
 
-algorithm_name = sys.argv[1] if len(sys.argv) > 1 else 'weighted'
+algorithm_name = sys.argv[1] if len(sys.argv) > 1 else 'thresholdPenalty'
 
 if algorithm_name not in algorithms:
     print(f"Invalid algorithm: {algorithm_name}")
@@ -40,10 +41,11 @@ print(f"Setup time: {time.time()-start:.2f}s")
 
 ga_configs = {
     'population_size': 20,
-    'generations': 1000,
+    'generations': 150,
     'elitism_ratio': 0.05,
     'crossover_rate': 0.7,
     'mutation_rate': 0.2,
+    'knn_k': 2,
     'gpu': False
 }
 

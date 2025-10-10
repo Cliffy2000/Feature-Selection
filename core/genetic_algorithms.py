@@ -1,3 +1,4 @@
+import random
 import time
 import torch
 import numpy as np
@@ -10,7 +11,7 @@ from multiprocessing import Pool, cpu_count
 
 
 class BaseGA:
-    def __init__(self, X, y, population_size, generations, elitism_ratio, crossover_rate, mutation_rate, gpu=False):
+    def __init__(self, X, y, population_size, generations, elitism_ratio, crossover_rate, mutation_rate, knn_k=5, gpu=False):
         # dataset params
         self.X = X
         self.y = y
@@ -23,6 +24,7 @@ class BaseGA:
         self.elitism_count = int(self.population_size * self.elitism_ratio)
         self.crossover_rate = crossover_rate
         self.mutation_rate = mutation_rate
+        self.knn_k = knn_k
 
         # GA variables
         self.population = self.initialize_population()
@@ -97,7 +99,8 @@ class BaseGA:
         """
         raise NotImplementedError("Each GA variant must implement decode()")
 
-    def fitness_knn(self, chromosome, k=5, n_trials=3):
+    def fitness_knn(self, chromosome, n_trials=3):
+        k = self.knn_k
         decoded = self.decode(chromosome)
 
         if decoded.dtype == bool:
@@ -260,6 +263,25 @@ class ThresholdDecodingGA(BaseGA):
     """
     This decoding method considers the value of each allele and the threshold. Features are turned on if their corresponding allele has a value larger than the threshold.
     """
+
+    def decode(self, chromosome):
+        weights = chromosome[:-1] > chromosome[-1]
+        return np.append(weights, chromosome[-1])
+
+
+class ThresholdDecodingPenaltyGA(BaseGA):
+    """
+    This builds on top of the threshold decoding, but adds random chance that the tournament selection aims for least amount of features instead of highest fitness score
+    """
+
+    def select_tourn(self):
+        tournament_size = 3
+        tournament = np.random.choice(self.population, tournament_size, replace=False)
+        if random.random() < 0.25:
+            winner = min(tournament, key=lambda x: np.sum(x['chromosome'][:-1] > x['chromosome'][-1]))
+        else:
+            winner = max(tournament, key=lambda x: x['fitness'])
+        return winner
 
     def decode(self, chromosome):
         weights = chromosome[:-1] > chromosome[-1]
