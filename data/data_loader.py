@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 from ucimlrepo import fetch_ucirepo
+from sklearn.preprocessing import StandardScaler
 
 _cached_data: dict[str, Optional[np.ndarray]] = {'X': None, 'y': None}
 
@@ -84,14 +85,19 @@ def load_clean_iris():
 
     return _cached_data['X'], _cached_data['y']
 
-def load_breast_cancer():
+
+def load_breast_cancer(standardize=True):
     global _cached_data
 
-    if _cached_data['X'] is not None:
-        return _cached_data['X'], _cached_data['y']
+    if _cached_data['X'] is None:
+        dataset = fetch_ucirepo(id=17)
+        _cached_data['X'] = dataset.data.features.values
+        _cached_data['y'] = dataset.data.targets.values.ravel()
 
-    dataset = fetch_ucirepo(id=17)
-    _cached_data['X'] = dataset.data.features.values
-    _cached_data['y'] = dataset.data.targets.values.ravel()
+    X, y = _cached_data['X'], _cached_data['y']
 
-    return _cached_data['X'], _cached_data['y']
+    if standardize:
+        scaler = StandardScaler()
+        X = scaler.fit_transform(X)
+
+    return X, y

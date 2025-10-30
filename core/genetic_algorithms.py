@@ -313,6 +313,26 @@ class RankingDecodingGA(BaseGA):
 
         return np.append(mask, threshold)
 
+class RankingDecodingPenaltyGA(BaseGA):
+    def select_tourn(self):
+        tournament_size = 3
+        tournament = np.random.choice(self.population, tournament_size, replace=False)
+        if random.random() < 0.25:
+            winner = min(tournament, key=lambda x: x['chromosome'][-1])
+        else:
+            winner = max(tournament, key=lambda x: x['fitness'])
+        return winner
+
+    def decode(self, chromosome):
+        threshold = chromosome[-1]
+        n_select = int(self.n_features * threshold)
+        mask = np.zeros(self.n_features, dtype=bool)
+
+        if n_select > 0:
+            mask[np.argpartition(chromosome[:-1], -n_select)[-n_select:]] = True
+
+        return np.append(mask, threshold)
+
 
 class WeightedFeaturesGA(BaseGA):
     """
